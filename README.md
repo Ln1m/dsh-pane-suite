@@ -1,4 +1,4 @@
-# dsh-vk-viewer
+# dsh-viewer
 
 DSH Web 右栏的文档查看器：Office 文档、网页、图片、文本都能在右栏开成一个标签看，不用切窗口。
 

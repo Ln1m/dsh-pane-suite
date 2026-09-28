@@ -1,4 +1,4 @@
-# dsh-vk-viewer
+# dsh-viewer
 
 A document viewer for the DSH Web client's right sidebar: Office documents, web pages, images and text all open as tabs in the right pane instead of a separate window.
 

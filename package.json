@@ -1,5 +1,5 @@
 {
-  "name": "dsh-vk-viewer",
+  "name": "dsh-viewer",
   "version": "0.1.0",
   "description": "3栏layout 右栏查看器：Office 文档 / 网页 / 图片 / 文本预览。",
   "type": "module",
@@ -35,10 +35,10 @@
   "author": "Ln1m (https://github.com/Ln1m)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ln1m/dsh-vk-viewer.git"
+    "url": "git+https://github.com/Ln1m/dsh-viewer.git"
   },
-  "homepage": "https://github.com/Ln1m/dsh-vk-viewer#readme",
+  "homepage": "https://github.com/Ln1m/dsh-viewer#readme",
   "bugs": {
-    "url": "https://github.com/Ln1m/dsh-vk-viewer/issues"
+    "url": "https://github.com/Ln1m/dsh-viewer/issues"
   }
 }
