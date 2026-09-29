@@ -1,30 +1,36 @@
-# dsh-viewer
+# dsh-pane-suite
 
-> **The vk build only**: position — a right-column tab (`sidebar.right.pane.tab`); install the [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) contract + skeleton first.
-> Conflicts: a slot renders only its highest-priority entry, and two registrations at the same priority throw; mutually exclusive with anything claiming the same position (see "How to use it / what it conflicts with" in [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite)).
+[中文](README.md) | English
 
-A document viewer for the DSH Web client's right sidebar: Office documents, web pages, images and text all open as tabs in the right pane instead of a separate window.
+Right column: document viewer and embedded browser
 
-It used to live inside `dsh-vk-suite`; it now ships as **its own repository**. Install the framework (contract + skeleton) first — without it this plugin registers nothing.
+> Requires [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) first.
 
-| Dependency | Why |
+## Packages
+
+| Directory | What it does |
 |---|---|
-| `dsh-vk-contract` + `dsh-vk-layout` from `dsh-vk-suite` | The framework: slot contract and the left/right sidebar hosts |
-| official `@deepseek-ai/dsh-client-ui-sidebar-right` | The right sidebar itself (the tab-type registry) |
+| `dsh-viewer` | Preview Office, web, image and text files in the right column |
+| `dsh-embedded-browser` | Embedded browser whose picture is a native WebView2 child control; the panel draws the toolbar |
 
 ## Install
 
-```powershell
-dsh plugin --profile web add file:<path to dsh-vk-suite>/dsh-vk-contract
-dsh plugin --profile web add file:<path to dsh-vk-suite>/dsh-vk-layout
-dsh plugin --profile web add file:<this repository>
+```sh
+# one package
+dsh plugin --profile web add file:<this repo>/dsh-viewer
 ```
 
-Restart DSH afterwards. The right sidebar gains a **Viewer** tab (a file browser); picking a file from the file tree or the list opens it there.
+Or install the whole family on Windows PowerShell:
 
-## How it differs from the official viewer
+```powershell
+./install.ps1
+```
 
-The official `@deepseek-ai/dsh-client-ui-sidebar-documentpreview` is a `fallback` type that only claims `dsh-resource://file/**`. This plugin's type takes over those addresses and adds Office rendering (web view or original-layout PDF) plus image zoom, while reusing the same keyed `sidebar.right.pane.tab` seats — so the tab strip, expand/collapse and ⌘W stay official.
+Restart the web instance afterwards. Each package directory carries its own README.
+
+## Screenshots
+
+![dsh-embedded-browser](dsh-embedded-browser/assets/deepseek-icon-64.png)
 
 ## License
 

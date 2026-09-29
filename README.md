@@ -1,31 +1,37 @@
-# dsh-viewer
+# dsh-pane-suite
 
-> 本仓**只有 vk 版**：位置 —— 右栏标签（`sidebar.right.pane.tab`），需先装 [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) 契约 + 骨架。
-> 冲突：一个槽位只渲染优先级最高的一条，同优先级重复注册会直接抛错；与占同一位置的插件互斥（详见 [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) 的「推荐怎么用 / 会跟谁冲突」）。
+中文 | [English](README.en.md)
 
-DSH Web 右栏的文档查看器：Office 文档、网页、图片、文本都能在右栏开成一个标签看，不用切窗口。
+右栏家族：文档查看器与内嵌浏览器
 
-它从 `dsh-vk-suite` 里独立出来，是**自己一个仓**。装之前先装框架（契约 + 骨架），否则它什么都不注册。
+> 前置：先装 [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite)。
 
-| 依赖 | 说明 |
+## 包
+
+| 目录 | 作用 |
 |---|---|
-| `dsh-vk-suite` 的 `dsh-vk-contract` + `dsh-vk-layout` | 框架：槽位契约与左/右栏宿主 |
-| 官方 `@deepseek-ai/dsh-client-ui-sidebar-right` | 右栏本体（标签类型注册表） |
+| `dsh-viewer` | 右栏预览 Office / 网页 / 图片 / 文本 |
+| `dsh-embedded-browser` | 右栏内嵌浏览器：画面是桌面外壳里的 WebView2 原生子控件，工具条由面板自绘 |
 
 ## 装
 
-```powershell
-dsh plugin --profile web add file:<dsh-vk-suite 路径>/dsh-vk-contract
-dsh plugin --profile web add file:<dsh-vk-suite 路径>/dsh-vk-layout
-dsh plugin --profile web add file:<本仓库>
+```sh
+# 只装其中一个包
+dsh plugin --profile web add file:<本仓库>/dsh-viewer
 ```
 
-装完重启 DSH。右栏会多一个「查看器」标签，点开即是文件浏览器；从文件栏或列表里点文件也会进这里。
+整族一次装完（Windows PowerShell）：
 
-## 和官方查看器的区别
+```powershell
+./install.ps1
+```
 
-官方的 `@deepseek-ai/dsh-client-ui-sidebar-documentpreview` 是 fallback 类型，只认 `dsh-resource://file/**`。本插件的类型优先接管，额外做了 Office 文档的网页视图 / 原版式 PDF 转换与图片缩放，并沿用同一套 `sidebar.right.pane.tab` keyed 席位，所以 Tab 条、开合、⌘W 都还是官方那套。
+装完重启 web 实例。每个包目录里还有它自己的 README。
 
-## License
+## 界面
+
+![dsh-embedded-browser](dsh-embedded-browser/assets/deepseek-icon-64.png)
+
+## 许可
 
 MIT
