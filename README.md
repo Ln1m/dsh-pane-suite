@@ -29,9 +29,11 @@ dsh plugin --profile web add file:<本仓库>/dsh-viewer
 不克隆仓库、直接从 Release 装（一行一个包）：
 
 ```sh
-dsh plugin --profile web add "https://github.com/Ln1m/dsh-pane-suite/releases/download/v0.1.0/dsh-viewer-0.1.0.tgz"
-dsh plugin --profile web add "https://github.com/Ln1m/dsh-pane-suite/releases/download/v0.1.0/dsh-embedded-browser-0.1.0.tgz"
+dsh plugin --profile web add "https://github.com/Ln1m/dsh-pane-suite/releases/download/v0.1.0/dsh-pane-viewer-0.1.0.tgz"
+dsh plugin --profile web add "https://github.com/Ln1m/dsh-pane-suite/releases/download/v0.1.0/dsh-pane-browser-0.1.0.tgz"
 ```
+
+装的时候若报 `UNABLE_TO_VERIFY_LEAF_SIGNATURE`（国内出口证书注入，Node 默认不读系统证书库），先执行 `$env:NODE_OPTIONS='--use-system-ca'` 再装。
 
 装完重启 web 实例。每个包目录里还有它自己的 README。
 
