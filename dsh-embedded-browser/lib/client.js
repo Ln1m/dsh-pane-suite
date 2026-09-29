@@ -28,8 +28,15 @@ window.__ModuleLoader__.load({
 		// 所以面板被非面板元素盖住哪怕一点，就把画面整块藏起来，浮层收起后再报矩形让它回来。
 		const OCCL_MIN = 8;          // 覆盖边小于这个尺寸的（拖拽条 / 分隔线）不算遮挡
 		const OCCL_THROTTLE = 120;   // 两次遮挡扫描的最小间隔（单次约 5ms）
+		const OCCL_SETTLE_MS = 200;  // 画面还在动（拖右栏 / 收起展开）就不扫遮挡：扫描要遍历全文档，跟帧跑会把主线程占满
 		const OCCL_SEEN_MAX = 200;   // 动态记住的"像浮层"节点上限
 		const OCCL_SELECTOR = '[aria-modal],[role="dialog"],[role="alertdialog"],[role="menu"],[role="listbox"],[role="tooltip"],dialog,[class*="mask"],[class*="overlay"],[class*="modal"],[class*="dialog"],[class*="popup"],[class*="dropdown"],[class*="menu"],[class*="tooltip"],[class*="toast"],[class*="drawer"],[class*="sheet"]';
+		// 只看选择器、不读 computedStyle 的预处理：MutationObserver 每条记录都调一次，
+		// 必须零成本（流式输出每来一段字都在改节点的 class/style，读样式就会卡）。
+		function matchesOccl(node) {
+			if (node === null || node === undefined || node.nodeType !== 1) return false;
+			try { return typeof node.matches === 'function' && node.matches(OCCL_SELECTOR) === true; } catch { return false; }
+		}
 		// 收藏夹浮层外形：一次显示 10 行，数值要和外壳浮层页面里的 .row / #card / #list 对上；
 		// 卡片铺满控件（不透明底 + 圆角），所以高度 = 卡片上下描边 2 + 列表内边距 12 + 行数 × 行高
 		const SHELF_ROWS = 10;
@@ -248,16 +255,45 @@ window.__ModuleLoader__.load({
 
 			const nav = (action) => { post({ cmd: 'nav', action }); };
 
+			/* 右栏展开 / 收起 / 全屏 / 缩放都是带动画的：DOM 每帧都在变，而原生画面要经
+			   postMessage → 外壳 → SetWindowPos 才动，天然慢一到两帧，看起来就是「跟不上右栏」。
+			   这里按最近一帧的速度往前推 LEAD_MS 补掉这段延迟：画面走在 DOM 稍前一点；
+			   动画停下时速度≈0，补的量自然归零，不会一直偏。推进量封顶，免得快动画时甩出去。 */
+			const LEAD_MS = 18;
+			const LEAD_MAX_PX = 14;
+			const leadRef = react.useRef({ t: 0, x: 0, y: 0, w: 0, h: 0, vx: 0, vy: 0, vw: 0, vh: 0 });
+
+			const leadBy = (value, velocity) => {
+				const px = velocity * LEAD_MS;
+				if (px > LEAD_MAX_PX) return value + LEAD_MAX_PX;
+				if (px < -LEAD_MAX_PX) return value - LEAD_MAX_PX;
+				return value + px;
+			};
+
 			const geometry = () => {
 				const stage = stageRef.current;
 				if (stage === null) return null;
 				const rect = stage.getBoundingClientRect();
 				if (rect.width < MIN_SIZE || rect.height < MIN_SIZE) return null;
+				const now = Date.now();
+				const lead = leadRef.current;
+				const dt = now - lead.t;
+				if (dt >= 8) {
+					lead.vx = (rect.left - lead.x) / dt;
+					lead.vy = (rect.top - lead.y) / dt;
+					lead.vw = (rect.width - lead.w) / dt;
+					lead.vh = (rect.height - lead.h) / dt;
+					lead.t = now;
+					lead.x = rect.left;
+					lead.y = rect.top;
+					lead.w = rect.width;
+					lead.h = rect.height;
+				}
 				return {
-					x: Math.round(rect.left),
-					y: Math.round(rect.top),
-					w: Math.round(rect.width),
-					h: Math.round(rect.height),
+					x: Math.round(leadBy(rect.left, lead.vx)),
+					y: Math.round(leadBy(rect.top, lead.vy)),
+					w: Math.round(Math.max(MIN_SIZE, leadBy(rect.width, lead.vw))),
+					h: Math.round(Math.max(MIN_SIZE, leadBy(rect.height, lead.vh))),
 					dpr: window.devicePixelRatio || 1,
 					vw: window.innerWidth || 0,
 					vh: window.innerHeight || 0
@@ -269,6 +305,11 @@ window.__ModuleLoader__.load({
 				const stage = stageRef.current;
 				if (stage === null) { occlRef.current = false; return; }
 				if (document.visibilityState === 'hidden') return;
+				// 面板不在视口里就不用扫：结果没人用（report 里画面本来就是按 visibleRef 藏的）
+				if (visibleRef.current === false) { occlRef.current = false; return; }
+				// 画面还在动（拖右栏 / 收起展开）：扫描要 querySelectorAll 全文档 + 逐个命中测试，
+				// 跟帧跑就是「拖着卡」的主因。停手后由 800ms 心跳 / mutation 补扫一次即可。
+				if (Date.now() - lastTickRef.current < OCCL_SETTLE_MS) return;
 				const now = Date.now();
 				if (now - occlAtRef.current < OCCL_THROTTLE) return;
 				const panel = typeof stage.closest === 'function' ? (stage.closest('.eb_root') || stage.parentElement) : stage.parentElement;
@@ -318,6 +359,13 @@ window.__ModuleLoader__.load({
 			react.useEffect(() => {
 				const call = (target) => { const fn = openRef.current; if (typeof fn === 'function') fn(target); };
 				globalThis.__DSH_EMBED_OPEN__ = call;
+				/* 别的插件在这只面板挂上之前点过链接：它把待办留在 __DSH_EMBED_PENDING__ 上，
+				   这里挂好把手后立刻取走（免去调用方盲等几秒再降级到官方浏览器页）。 */
+				const pending = globalThis.__DSH_EMBED_PENDING__;
+				if (typeof pending === 'string' && pending.length > 0) {
+					try { delete globalThis.__DSH_EMBED_PENDING__; } catch { globalThis.__DSH_EMBED_PENDING__ = undefined; }
+					call(pending);
+				}
 				const onEvent = (event) => {
 					const target = event === null || event === undefined ? undefined : event.detail;
 					if (typeof target === 'string' && target.length > 0) call(target);
@@ -459,21 +507,65 @@ window.__ModuleLoader__.load({
 				let observer = null;
 				let visibleObserver = null;
 				let domObserver = null;
-				// 拖右栏要跟手：30ms 前沿+后沿节流（不做 120ms 防抖，否则要等手停下来画面才动）
+				/* 右栏展开 / 收起 / 全屏 / 缩放走的是 transform 动画（实测 _tabCell_ transition: transform .3s
+				   cubic-bezier(.4,0,.2,1)）。transform **不改布局尺寸、也不发 scroll/resize/mutation**，
+				   ResizeObserver 与 DOM 观察器全都听不到 —— 动画期间面板根本不上报，原生画面只能等下一次
+				   事件（或 800ms 心跳）才跳过去，看起来就是「跟不上右栏」。
+				   所以在「可能触发这类动画的交互」之后开一段逐帧观察：每帧量一次 stage 矩形，变了就报，
+				   跑满 WATCH_MS 或稳定一阵就退出（不交互时零开销，不会常驻 rAF）。 */
+				const WATCH_MS = 1500;
+				let watchRaf = 0;
+				let watchUntil = 0;
+				let watchStart = 0;
+				let watchLast = '';
+				let watchStable = 0;
+				const watchFrame = () => {
+					watchRaf = 0;
+					const node = stageRef.current;
+					if (node === null) return;
+					const box = node.getBoundingClientRect();
+					const key = Math.round(box.left) + ',' + Math.round(box.top) + ',' + Math.round(box.width) + ',' + Math.round(box.height);
+					if (key !== watchLast) { watchLast = key; watchStable = 0; lastTickRef.current = Date.now(); report(false); }
+					else watchStable += 1;
+					const at = Date.now();
+					const done = at >= watchUntil || (watchStable >= 8 && at - watchStart >= 400);
+					if (!done) watchRaf = window.requestAnimationFrame(watchFrame);
+				};
+				const startWatch = () => {
+					watchStart = Date.now();
+					watchUntil = watchStart + WATCH_MS;
+					watchLast = '';
+					watchStable = 0;
+					if (watchRaf !== 0) return;
+					try { watchRaf = window.requestAnimationFrame(watchFrame); } catch { watchRaf = 0; }
+				};
+				const onPointerDown = () => startWatch();
+				const onKeyDown = (event) => {
+					if (event === null || event === undefined) return;
+					if (event.ctrlKey === true || event.altKey === true || event.metaKey === true || event.key === 'F11') startWatch();
+				};
+				/* 跟手：一帧最多报一次（rAF 合并）。拖右栏时面板每帧都在动，按固定 30ms 节流会让
+				   原生画面比面板慢半拍；这里同时把「最近一次运动时刻」记进 lastTickRef，
+				   遮挡扫描据此在运动期间让路（见 refreshOcclusion）。 */
 				const onChange = () => {
-					const now = Date.now();
-					const gap = now - lastTickRef.current;
-					if (gap >= 30) {
-						lastTickRef.current = now;
-						report(false);
-						return;
-					}
+					lastTickRef.current = Date.now();
+					startWatch();
 					if (timerRef.current !== 0) return;
-					timerRef.current = setTimeout(() => {
-						timerRef.current = 0;
-						lastTickRef.current = Date.now();
-						report(false);
-					}, 30 - gap);
+					const run = () => { timerRef.current = 0; report(false); };
+					let id = -1;
+					try { id = window.requestAnimationFrame(run); } catch { id = -1; }
+					if (id < 0) { run(); return; }
+					timerRef.current = id;
+				};
+				/** 滚动只认「滚的是装着本面板的容器」：聊天流自己滚（流式输出每来一段就滚一次）
+				    与画面摆位无关，跟着响应就是每滚一下都 postMessage 一次、外壳重摆原生控件。 */
+				const onScroll = (event) => {
+					const target = event === null || event === undefined ? null : event.target;
+					if (target !== null && target !== document && target.nodeType === 1) {
+						if (stage === null) return;
+						if (target !== stage && target.contains(stage) !== true) return;
+					}
+					onChange();
 				};
 				if (stage !== null && typeof ResizeObserver !== 'undefined') {
 					observer = new ResizeObserver(onChange);
@@ -499,6 +591,19 @@ window.__ModuleLoader__.load({
 					occlAtRef.current = 0;
 					report(true);
 				};
+				/* 一批 DOM 变动只结算一次（一帧内合并）：流式输出时 body 下每秒几十次变动，
+				   逐条记录都扫一遍整个文档就是用户报的「卡」。 */
+				let domDirty = false;
+				const pokeSoon = () => {
+					if (domDirty) return;
+					domDirty = true;
+					const flush = () => {
+						domDirty = false;
+						if (document.visibilityState === 'hidden') return;
+						poke();
+					};
+					try { window.requestAnimationFrame(flush); } catch { flush(); }
+				};
 				const suspicious = (node) => {
 					if (node === null || node === undefined || node.nodeType !== 1) return false;
 					try {
@@ -515,24 +620,24 @@ window.__ModuleLoader__.load({
 				};
 				if (typeof MutationObserver !== 'undefined' && document.body !== null) {
 					domObserver = new MutationObserver((records) => {
-						for (const rec of records) {
+						for (let i = 0; i < records.length; i += 1) {
+							const rec = records[i];
 							if (rec.type === 'attributes') {
-								if (suspicious(rec.target)) { remember(rec.target); poke(); return; }
+								/* 属性变化量最大（流式渲染一直在改 class/style）。先做零成本的选择器匹配，
+								   只有本来就「像浮层」或已在册的节点才继续；其余整条记录丢弃。 */
+								if (matchesOccl(rec.target) || occlSeenRef.current.indexOf(rec.target) >= 0) { pokeSoon(); return; }
 								continue;
 							}
 							if (rec.removedNodes.length > 0) {
-								for (let i = 0; i < rec.removedNodes.length; i++) {
-									const gone = rec.removedNodes[i];
-									if (gone !== null && gone !== undefined && gone.nodeType === 1 && typeof gone.matches === 'function') {
-										let matched = false;
-										try { matched = gone.matches(OCCL_SELECTOR); } catch { matched = false; }
-										if (matched) { poke(); return; }
-									}
+								for (let k = 0; k < rec.removedNodes.length; k += 1) {
+									if (matchesOccl(rec.removedNodes[k])) { pokeSoon(); return; }
 								}
 								continue;
 							}
-							for (let i = 0; i < rec.addedNodes.length; i++) {
-								if (suspicious(rec.addedNodes[i])) { remember(rec.addedNodes[i]); poke(); return; }
+							const added = rec.addedNodes;
+							for (let k = 0; k < added.length && k < 12; k += 1) {
+								const node = added[k];
+								if (matchesOccl(node) || suspicious(node)) { remember(node); pokeSoon(); return; }
 							}
 						}
 					});
@@ -544,27 +649,33 @@ window.__ModuleLoader__.load({
 					});
 				}
 				window.addEventListener('resize', onChange);
-				window.addEventListener('scroll', onChange, true);
+				document.addEventListener('scroll', onScroll, true);
 				document.addEventListener('visibilitychange', onChange);
+				// transform 动画期间没有事件可听：交互之后主动开一段逐帧观察（见上面 WATCH_MS）
+				document.addEventListener('pointerdown', onPointerDown, true);
+				document.addEventListener('keydown', onKeyDown, true);
 				const stored = readStore();
 				const remembered = targetRef.current.length > 0
 					? targetRef.current
 					: (stored.length > 0 && stored !== LEGACY_START_URL ? stored : START_URL);
 				targetRef.current = remembered;
 				if (urlRef.current.length === 0 || urlRef.current === LEGACY_START_URL) setUrl(remembered);
-				const timer = setInterval(() => report(false), REPORT_MS);
+				const timer = setInterval(() => { if (document.visibilityState !== 'hidden') report(false); }, REPORT_MS);
 				const first = setTimeout(() => report(true), 0);
 				return () => {
 					if (handle !== 0) clearTimeout(handle);
-					if (timerRef.current !== 0) { clearTimeout(timerRef.current); timerRef.current = 0; }
+					if (timerRef.current !== 0) { try { window.cancelAnimationFrame(timerRef.current); } catch { /* ignore */ } timerRef.current = 0; }
 					clearInterval(timer);
 					clearTimeout(first);
 					if (observer !== null) observer.disconnect();
 					if (visibleObserver !== null) visibleObserver.disconnect();
 					if (domObserver !== null) domObserver.disconnect();
 					window.removeEventListener('resize', onChange);
-					window.removeEventListener('scroll', onChange, true);
+					document.removeEventListener('scroll', onScroll, true);
 					document.removeEventListener('visibilitychange', onChange);
+					document.removeEventListener('pointerdown', onPointerDown, true);
+					document.removeEventListener('keydown', onKeyDown, true);
+					if (watchRaf !== 0) { try { window.cancelAnimationFrame(watchRaf); } catch { /* ignore */ } watchRaf = 0; }
 					targetRef.current = '';
 					lastRef.current = '';
 					sentRef.current = '';

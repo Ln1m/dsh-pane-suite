@@ -1,8 +1,5 @@
 # dsh-viewer
 
-> 本仓**只有 vk 版**：位置 —— 右栏标签（`sidebar.right.pane.tab`），需先装 [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) 契约 + 骨架。
-> 冲突：一个槽位只渲染优先级最高的一条，同优先级重复注册会直接抛错；与占同一位置的插件互斥（详见 [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) 的「推荐怎么用 / 会跟谁冲突」）。
-
 DSH Web 右栏的文档查看器：Office 文档、网页、图片、文本都能在右栏开成一个标签看，不用切窗口。
 
 它从 `dsh-vk-suite` 里独立出来，是**自己一个仓**。装之前先装框架（契约 + 骨架），否则它什么都不注册。

@@ -1,8 +1,5 @@
 # dsh-viewer
 
-> **The vk build only**: position — a right-column tab (`sidebar.right.pane.tab`); install the [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite) contract + skeleton first.
-> Conflicts: a slot renders only its highest-priority entry, and two registrations at the same priority throw; mutually exclusive with anything claiming the same position (see "How to use it / what it conflicts with" in [dsh-vk-suite](https://github.com/Ln1m/dsh-vk-suite)).
-
 A document viewer for the DSH Web client's right sidebar: Office documents, web pages, images and text all open as tabs in the right pane instead of a separate window.
 
 It used to live inside `dsh-vk-suite`; it now ships as **its own repository**. Install the framework (contract + skeleton) first — without it this plugin registers nothing.

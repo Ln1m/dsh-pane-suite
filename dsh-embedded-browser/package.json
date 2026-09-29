@@ -1,6 +1,6 @@
 {
     "name": "dsh-pane-browser",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "右栏内嵌浏览器：面板只报矩形，真正的画面是 DSH 桌面外壳（dsh-desktop，WinForms + WebView2）主窗体里的一块 WebView2 原生子控件，多标签共用同一浏览器进程与 9223 调试口；收藏夹由外壳单独的一块小浮层叠在画面上呈现。",
     "type": "module",
     "main": "lib/index.js",
