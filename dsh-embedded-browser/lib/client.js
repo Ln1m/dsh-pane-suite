@@ -235,6 +235,7 @@ window.__ModuleLoader__.load({
 			const emptyAtRef = react.useRef(0);
 			const loggedRef = react.useRef('');
 			const iconWaiterRef = react.useRef(null);
+			const openRef = react.useRef(null);
 			const supported = bridge() !== null;
 
 			urlRef.current = url;
@@ -310,6 +311,23 @@ window.__ModuleLoader__.load({
 				writeStore(target);
 				report(true);
 			};
+
+			// 跨插件入口：面板挂载期间留一个全局把手 + 一个 window 事件，别的插件拿到就能让这只浏览器导航
+			// （面板不在右栏时把手不存在，调用方据此走不弹悬浮窗的降级）。
+			react.useEffect(() => { openRef.current = open; });
+			react.useEffect(() => {
+				const call = (target) => { const fn = openRef.current; if (typeof fn === 'function') fn(target); };
+				globalThis.__DSH_EMBED_OPEN__ = call;
+				const onEvent = (event) => {
+					const target = event === null || event === undefined ? undefined : event.detail;
+					if (typeof target === 'string' && target.length > 0) call(target);
+				};
+				window.addEventListener('dsh-embed-open', onEvent);
+				return () => {
+					if (globalThis.__DSH_EMBED_OPEN__ === call) { try { delete globalThis.__DSH_EMBED_OPEN__; } catch { globalThis.__DSH_EMBED_OPEN__ = undefined; } }
+					window.removeEventListener('dsh-embed-open', onEvent);
+				};
+			}, []);
 
 			const hostOf = (target) => {
 				try { return new URL(String(target)).hostname.replace(/^www\./, ''); } catch { return String(target === undefined || target === null ? '' : target); }
