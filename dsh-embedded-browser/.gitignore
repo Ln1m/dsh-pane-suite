@@ -1,0 +1,10 @@
+node_modules/
+profiles*/
+data/
+embed-profile/
+*.WebView2/
+*.bak*
+*.old*
+*.exe
+*.dll
+*.log
