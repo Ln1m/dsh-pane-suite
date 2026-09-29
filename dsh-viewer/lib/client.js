@@ -843,14 +843,8 @@ window.__ModuleLoader__.load({
 		}
 
 		// ──────────────────────────────────────────────────────────────
-		// 组件：左栏「任务」Tab 的正文（长期任务插件 dsh-lt-tasks 的组件本体）
+		// 组件：右栏「查看器」Tab 的正文
 		// ──────────────────────────────────────────────────────────────
-		/**
-		 * 为什么需要它：`dsh-lt-tasks` 的客户端半边注册进 `sidebar.tasks` 这个插槽
-		 * （`slots.inject("sidebar.tasks", () => slots.register({name:"sidebar.tasks"}, …))`），
-		 * 而 0.1.5 的三栏形态下**没有任何人声明过这个键**（自研只接管 `sidebar.workspaces`，官方也不声明它），
-		 * 于是那个 `inject` 因「未声明」**根本不回调** → 长期任务视图在两版界面里都消失（实测
-		 */
 		function VKViewerTabBody({ useTabInfo }) {
 			const { tab } = useTabInfo();
 			const navigation = tab.navigation;
