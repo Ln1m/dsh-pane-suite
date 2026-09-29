@@ -37,8 +37,8 @@
     "type": "git",
     "url": "git+https://github.com/Ln1m/dsh-viewer.git"
   },
-  "homepage": "https://github.com/Ln1m/dsh-viewer#readme",
+  "homepage": "https://github.com/Ln1m/dsh-pane-viewer#readme",
   "bugs": {
-    "url": "https://github.com/Ln1m/dsh-viewer/issues"
+    "url": "https://github.com/Ln1m/dsh-pane-viewer/issues"
   }
 }
