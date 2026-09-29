@@ -35,7 +35,7 @@
   "author": "Ln1m (https://github.com/Ln1m)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ln1m/dsh-viewer.git"
+    "url": "git+https://github.com/Ln1m/dsh-pane-viewer.git"
   },
   "homepage": "https://github.com/Ln1m/dsh-pane-viewer#readme",
   "bugs": {
