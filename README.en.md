@@ -26,6 +26,13 @@ Or install the whole family on Windows PowerShell:
 ./install.ps1
 ```
 
+Install straight from the release, no clone needed:
+
+```sh
+dsh plugin --profile web add "https://github.com/Ln1m/dsh-pane-suite/releases/download/v0.1.0/dsh-viewer-0.1.0.tgz"
+dsh plugin --profile web add "https://github.com/Ln1m/dsh-pane-suite/releases/download/v0.1.0/dsh-embedded-browser-0.1.0.tgz"
+```
+
 Restart the web instance afterwards. Each package directory carries its own README.
 
 ## Screenshots
