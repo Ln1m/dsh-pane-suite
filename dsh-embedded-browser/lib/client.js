@@ -22,7 +22,7 @@ window.__ModuleLoader__.load({
 		const START_URL = 'https://limestart.cn/';
 		const LEGACY_START_URL = 'https://cn.bing.com/';
 		const STORE_KEY = 'dsh-embedded-browser/url';
-		const REPORT_MS = 800;
+		const REPORT_MS = 500;
 		const MIN_SIZE = 40;
 		// 遮挡检测：原生画面永远在主界面之上，DSH 里的 DOM 浮层压过来没法正确层叠，
 		// 所以面板被非面板元素盖住哪怕一点，就把画面整块藏起来，浮层收起后再报矩形让它回来。
@@ -59,6 +59,8 @@ window.__ModuleLoader__.load({
 			zoomOut: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M8 10.5h5"/><path d="M15.4 15.4L21 21"/>',
 			zoomIn: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M8 10.5h5"/><path d="M10.5 8v5"/><path d="M15.4 15.4L21 21"/>',
 			globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/>',
+			open: '<path d="M13.5 4.5h6v6"/><path d="M19.5 4.5L11.5 12.5"/><path d="M17.5 14v5.6h-13V6.6H10"/>',
+			folder: '<path d="M3 6.8h5.2l1.6 2.1H21v9.3H3z"/>',
 			warn: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.4v.2"/>'
 		};
 
@@ -79,34 +81,68 @@ window.__ModuleLoader__.load({
 		}
 
 		const CSS = [
+			'body{--vk-accent:var(--dsw-alias-accent,var(--dsw-alias-state-business-primary));--vk-accent-ring:color-mix(in srgb,var(--vk-accent) 22%,transparent);--vk-accent-soft:color-mix(in srgb,var(--vk-accent) 12%,transparent);--vk-ok:#73c991;--vk-danger:var(--dsw-alias-state-error-primary,#f14c4c);--vk-danger-soft:color-mix(in srgb,var(--vk-danger) 35%,transparent);--vk-fg:var(--dsw-alias-label-primary);--vk-fg2:var(--dsw-alias-label-secondary);--vk-fg3:var(--dsw-alias-label-tertiary);--vk-line:var(--dsw-alias-border-l1);--vk-line2:var(--dsw-alias-border-l2);--vk-bg-hover:var(--dsw-alias-interactive-bg-hover);--vk-r-xs:4px;--vk-r-sm:6px;--vk-r-md:8px;--vk-r-lg:12px;--vk-r-pill:999px;--vk-fs-xs:11px;--vk-fs-sm:12px;--vk-fs-md:13px;--vk-fs-lg:14px;--vk-dur:.12s;--vk-ease:cubic-bezier(.2,.7,.3,1);--vk-fade:background-color var(--vk-dur) var(--vk-ease),color var(--vk-dur) var(--vk-ease),border-color var(--vk-dur) var(--vk-ease),opacity var(--vk-dur) var(--vk-ease);--vk-ring:0 0 0 2px var(--vk-accent-ring);}',
 			'.eb_root{position:relative;display:flex;flex-direction:column;height:100%;min-height:0;background:var(--dsw-specific-sidebar-fill)}',
 			'.eb_bar{display:flex;align-items:center;gap:2px;height:38px;box-sizing:border-box;padding:0 6px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}',
-			'.eb_btn{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0}',
+			'.eb_btn{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border:0;border-radius:var(--vk-r-sm);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0}',
 			'.eb_btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
 			'.eb_btn:disabled{opacity:.35;cursor:default}',
 			'.eb_btn[data-on="1"]{color:var(--dsw-alias-brand-primary)}',
-			'.eb_tabs{display:flex;align-items:center;gap:3px;flex:0 1 auto;min-width:0;max-width:42%;overflow-x:auto;overflow-y:hidden;margin:0 3px}',
-			'.eb_tab{display:flex;align-items:center;gap:3px;flex:0 0 auto;height:21px;max-width:124px;padding:0 4px 0 7px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-specific-input-major);color:var(--dsw-alias-label-secondary);font-size:11px;cursor:pointer}',
-			'.eb_tab[data-active="1"]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l3)}',
-			'.eb_tabText{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.eb_tabClose{display:flex;flex:0 0 auto;opacity:.55;border-radius:4px;padding:1px}',
-			'.eb_tabClose:hover{opacity:1;background:var(--dsw-alias-interactive-bg-hover)}',
-			'.eb_url{flex:1 1 auto;min-width:90px;height:24px;margin:0 4px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-specific-input-major);color:var(--dsw-alias-label-primary);font-size:12px;padding:0 8px;outline:none}',
+			// 标签条：滑条槽位常驻（overflow-x:scroll + 固定高 26 = 21 标签 + 5 滑条），
+			// 滑条出现/消失就不会把标签顶来顶去；槽位平时透明，鼠标移到标签条上才显形。
+			// 别写标准的 scrollbar-width/scrollbar-color：一写 Chromium 就忽略 ::-webkit-scrollbar，
+			// 滑条厚度由不得我们，内容区被压到 21px 以下就会裁标签。
+			'.eb_tabs{display:flex;align-items:center;gap:3px;flex:0 1 auto;min-width:0;max-width:42%;height:26px;overflow-x:scroll;overflow-y:hidden;margin:0 3px}',
+			'.eb_tabs::-webkit-scrollbar{height:5px}',
+			'.eb_tabs::-webkit-scrollbar-track{background:transparent}',
+			'.eb_tabs::-webkit-scrollbar-thumb{background:transparent;border-radius:3px}',
+			'.eb_tabs:hover::-webkit-scrollbar-thumb{background:var(--dsw-alias-border-l3)}',
+			'.eb_tabs::-webkit-scrollbar-thumb:hover{background:var(--dsw-alias-label-tertiary)}',
+			'.eb_tabs::-webkit-scrollbar-button{display:none}',
+			'.eb_tab{display:flex;align-items:center;gap:3px;flex:0 1 auto;min-width:46px;height:21px;max-width:124px;padding:0 3px 0 7px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--vk-r-sm);background:var(--dsw-specific-input-major);color:var(--dsw-alias-label-secondary);font-size:var(--vk-fs-xs);cursor:pointer;transition:var(--vk-fade)}',
+			'.eb_tab:hover{border-color:var(--dsw-alias-border-l3)}',
+			// 当前页面这一页：常规高亮 + 品牌色描边，扫一眼就知道人在哪
+			'.eb_tab[data-active="1"]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-brand-primary)}',
+			'.eb_tabText{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			// 关闭叉常占位（不占位的话 hover 一显形标签就会跳宽），悬停这个标签、或它自己是当前页时才露出来
+			'.eb_tabClose{display:flex;flex:0 0 auto;align-items:center;justify-content:center;width:15px;height:15px;opacity:0;border-radius:var(--vk-r-xs);transition:opacity var(--vk-dur) var(--vk-ease),background-color var(--vk-dur) var(--vk-ease)}',
+			'.eb_tab:hover .eb_tabClose,.eb_tab[data-active="1"] .eb_tabClose{opacity:.6}',
+			'.eb_tab .eb_tabClose:hover{opacity:1;background:var(--dsw-alias-interactive-bg-hover)}',
+			'.eb_tab .eb_tabSpin{opacity:.9}',
+			'.eb_url{flex:1 1 auto;min-width:90px;height:24px;margin:0 4px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--vk-r-sm);background:var(--dsw-specific-input-major);color:var(--dsw-alias-label-primary);font-size:var(--vk-fs-sm);padding:0 8px;outline:none}',
 			'.eb_url:focus{border-color:var(--dsw-alias-border-l3)}',
-			'.eb_shelf{position:absolute;top:6px;right:6px;width:300px;max-width:calc(100% - 12px);max-height:calc(100% - 12px);z-index:5;display:flex;flex-direction:column;background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.45);overflow:hidden}',
+			'.eb_shelf{position:absolute;top:6px;right:6px;width:300px;max-width:calc(100% - 12px);max-height:calc(100% - 12px);z-index:5;display:flex;flex-direction:column;background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--vk-r-md);box-shadow:0 14px 34px rgba(0,0,0,.45);overflow:hidden}',
 			'.eb_shelfList{flex:1 1 auto;min-height:0;overflow:auto;padding:4px 0}',
-			'.eb_mark{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer}',
+			'.eb_mark{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:var(--vk-fs-sm);color:var(--dsw-alias-label-secondary);cursor:pointer}',
 			'.eb_mark:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
 			'.eb_fav{flex:0 0 auto;width:16px;height:16px;border-radius:3px;object-fit:contain}',
 			'.eb_markText{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
 			'.eb_del{flex:0 0 auto;display:flex;opacity:.55}',
 			'.eb_del:hover{opacity:1}',
-			'.eb_empty{padding:8px;font-size:12px;color:var(--dsw-alias-label-tertiary)}',
+			'.eb_empty{padding:8px;font-size:var(--vk-fs-sm);color:var(--dsw-alias-label-tertiary)}',
 			'.eb_stage{position:relative;flex:1 1 auto;min-height:0}',
 			'.eb_barWrap{position:relative;flex:0 0 auto}',
 			'.eb_prog{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden;pointer-events:none}',
 			'.eb_progBar{position:absolute;top:0;bottom:0;width:35%;border-radius:2px;background:var(--dsw-alias-brand-primary);animation:eb_progSlide 1.15s cubic-bezier(.62,.04,.35,1) infinite}',
 			'@keyframes eb_progSlide{0%{left:-35%}100%{left:100%}}',
+			// 窄栏：面板挤到放不下整条工具栏时，收起缩放的条件下再压地址框与标签条（不藏功能，只压宽度）
+			'.eb_root[data-compact="2"] .eb_url{min-width:56px}',
+			'.eb_root[data-compact="2"] .eb_tabs{max-width:26%}',
+			'@keyframes eb_spin{to{transform:rotate(360deg)}}',
+			'.eb_tabSpin svg{animation:eb_spin .9s linear infinite}',
+			// 一个标签都不剩时的空态：面板不会停在没画面的空处，中间放个能点的「新标签页」
+			'.eb_new{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:56px;height:56px;box-sizing:border-box;border:1px dashed var(--dsw-alias-border-l2);border-radius:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;transition:color .15s ease,border-color .15s ease,background .15s ease}',
+			'.eb_new:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l3);background:var(--dsw-alias-interactive-bg-hover)}',
+			// 下载条：一条一项，文件名 + 细进度 + 百分比 + 动作，和 Edge 那条一个意思
+			'.eb_dl{flex:0 0 auto;display:flex;flex-direction:column;max-height:132px;overflow:auto;padding:2px 6px 4px;border-bottom:1px solid var(--dsw-alias-border-l2)}',
+			'.eb_dlRow{display:flex;align-items:center;gap:7px;height:24px;flex:0 0 auto;font-size:var(--vk-fs-sm)}',
+			'.eb_dlName{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-primary)}',
+			'.eb_dlBar{flex:0 0 auto;width:72px;height:4px;border-radius:2px;background:var(--dsw-alias-border-l2);overflow:hidden}',
+			'.eb_dlFill{display:block;height:100%;border-radius:2px;background:var(--dsw-alias-brand-primary);transition:width .2s linear}',
+			'.eb_dlFill[data-state="done"],.eb_dlFill[data-state="fail"]{background:var(--dsw-alias-label-tertiary)}',
+			'.eb_dlPct{flex:0 0 auto;min-width:46px;text-align:right;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
+			'.eb_dlAct{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:var(--vk-r-xs);color:var(--dsw-alias-label-tertiary);cursor:pointer}',
+			'.eb_dlAct:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}',
 			'.eb_fail{position:absolute;left:0;right:0;top:38%;display:flex;justify-content:center;color:var(--dsw-alias-label-tertiary)}'
 		].join('');
 
@@ -137,6 +173,16 @@ window.__ModuleLoader__.load({
 			if (/^[a-z][a-z0-9+.-]*:\/\//i.test(text) || /^about:|^data:|^file:/i.test(text)) return text;
 			if (/^localhost(:\d+)?(\/|$)/i.test(text) || /^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/|$)/.test(text)) return 'http://' + text;
 			return 'https://' + text;
+		}
+
+		// 下载条上「还不知道总大小」时显示已下载的量
+		function fmtBytes(n) {
+			const v = Number(n);
+			if (!(v > 0)) return '0 B';
+			if (v < 1024) return v + ' B';
+			if (v < 1024 * 1024) return (v / 1024).toFixed(0) + ' KB';
+			if (v < 1024 * 1024 * 1024) return (v / 1024 / 1024).toFixed(1) + ' MB';
+			return (v / 1024 / 1024 / 1024).toFixed(2) + ' GB';
 		}
 
 		// 元素自身是否画出东西：纯透明外壳（布局 wrapper）不算遮挡，只有真的上色/贴图/背景模糊才算
@@ -226,7 +272,17 @@ window.__ModuleLoader__.load({
 			const [shelf, setShelf] = react.useState(false);
 			// 外壳认不认 cmd:shelf（认 = 用外壳那块浮层；不认 = 退回面板里的小卡片）
 			const [shellShelf, setShellShelf] = react.useState(false);
+			// 0 宽 / 1 收起缩放 / 2 再压地址框与标签条：按工具条真实宽度算
+			const [compact, setCompact] = react.useState(0);
+			const [downloads, setDownloads] = react.useState([]);
+			// 外壳报过「一个标签都不剩」才显示空态，免得刚挂上还没收到状态就闪一下
+			const [tabsEmpty, setTabsEmpty] = react.useState(false);
+			// 关掉最后一个标签后外壳会立刻补一个首页（几百毫秒），空态晚一点再露面就不会闪
+			const [emptyVisible, setEmptyVisible] = react.useState(false);
 			const stageRef = react.useRef(null);
+			const barRef = react.useRef(null);
+			const tabsRef = react.useRef(null);
+			const urlInputRef = react.useRef(null);
 			const lastTickRef = react.useRef(0);
 			const timerRef = react.useRef(0);
 			const urlRef = react.useRef(url);
@@ -239,7 +295,6 @@ window.__ModuleLoader__.load({
 			const occlRef = react.useRef(false);
 			const occlAtRef = react.useRef(0);
 			const occlSeenRef = react.useRef([]);
-			const emptyAtRef = react.useRef(0);
 			const loggedRef = react.useRef('');
 			const iconWaiterRef = react.useRef(null);
 			const openRef = react.useRef(null);
@@ -247,11 +302,32 @@ window.__ModuleLoader__.load({
 
 			urlRef.current = url;
 
+			// 工具条宽度决定紧凑档：窄到放不下整条工具栏时，先收缩放，再压地址框与标签条
+			react.useEffect(() => {
+				const bar = barRef.current;
+				if (bar === null || typeof ResizeObserver === 'undefined') return undefined;
+				const apply = () => {
+					const w = bar.clientWidth || 0;
+					const next = w < 300 ? 2 : (w < 430 ? 1 : 0);
+					setCompact((old) => (old === next ? old : next));
+				};
+				apply();
+				let observer = null;
+				try { observer = new ResizeObserver(apply); observer.observe(bar); } catch { observer = null; }
+				return () => { if (observer !== null) observer.disconnect(); };
+			}, []);
+
 			const post = (payload) => {
 				const b = bridge();
 				if (b === null) return;
 				try { b.postMessage(Object.assign({ kind: 'dsh-embed' }, payload)); } catch { }
 			};
+
+			react.useEffect(() => {
+				if (!tabsEmpty) { setEmptyVisible(false); return undefined; }
+				const id = setTimeout(() => setEmptyVisible(true), 260);
+				return () => clearTimeout(id);
+			}, [tabsEmpty]);
 
 			const nav = (action) => { post({ cmd: 'nav', action }); };
 
@@ -463,23 +539,26 @@ window.__ModuleLoader__.load({
 						if (typeof waiter === 'function') waiter(data.icon || '');
 						return;
 					}
+					if (data.kind === 'dsh-embed-focusurl') {
+						const node = urlInputRef.current;
+						if (node !== null) { try { node.focus(); node.select(); } catch { } }
+						return;
+					}
 					if (data.kind === 'dsh-embed-shelf') {
 						if (data.ack === true) { shellShelfRef.current = true; setShellShelf(true); return; }
 						if (typeof data.url === 'string' && data.url.length > 0) { openShelf(false); open(data.url); }
 						else if (data.closed === true) { shelfRef.current = false; setShelf(false); }
 						return;
 					}
+					if (data.kind === 'dsh-embed-download') {
+						setDownloads(Array.isArray(data.items) ? data.items : []);
+						return;
+					}
 					if (data.kind !== 'dsh-embed-state') return;
 					setPage((old) => Object.assign({}, old, data, { tabs: Array.isArray(data.tabs) ? data.tabs : old.tabs }));
-					// 标签页被关到零个：外壳里再没有能挂画面的标签，面板只剩一条空工具栏。
-					// 补一个首页标签，标签条永远不空（要关浏览器就关右栏里这个标签，不是把标签页关空）。
-					if (Array.isArray(data.tabs) && data.tabs.length === 0) {
-						const now = Date.now();
-						if (now - emptyAtRef.current > 1500) {
-							emptyAtRef.current = now;
-							post({ cmd: 'newTab', url: START_URL });
-						}
-					}
+					// 标签关到零个由外壳立刻补一个首页（关到零就白屏，补的速度还得看它）；
+					// 这里只在真收到「零个」时把空态放出来，兜住外壳那边没补上的情况。
+					if (Array.isArray(data.tabs)) setTabsEmpty(data.tabs.length === 0);
 					if (typeof data.url === 'string' && data.url.length > 0) setUrl(data.url);
 					if (data.loading === false && typeof data.url === 'string' && data.url.length > 0 && data.url !== loggedRef.current) {
 						loggedRef.current = data.url;
@@ -509,47 +588,41 @@ window.__ModuleLoader__.load({
 				let domObserver = null;
 				/* 右栏展开 / 收起 / 全屏 / 缩放走的是 transform 动画（实测 _tabCell_ transition: transform .3s
 				   cubic-bezier(.4,0,.2,1)）。transform **不改布局尺寸、也不发 scroll/resize/mutation**，
-				   ResizeObserver 与 DOM 观察器全都听不到 —— 动画期间面板根本不上报，原生画面只能等下一次
-				   事件（或 800ms 心跳）才跳过去，看起来就是「跟不上右栏」。
-				   所以在「可能触发这类动画的交互」之后开一段逐帧观察：每帧量一次 stage 矩形，变了就报，
-				   跑满 WATCH_MS 或稳定一阵就退出（不交互时零开销，不会常驻 rAF）。 */
-				const WATCH_MS = 1500;
+				   ResizeObserver 与 DOM 观察器全都听不到。
+				   所以面板挂上就常驻逐帧观察：动过的帧每帧量一次；静下来（连续 IDLE_SKIP 帧没变）
+				   降到 IDLE_SKIP 帧量一次（约 15Hz，空闲开销可忽略）。一旦量到变化立刻回到每帧。
+				   之前只在「交互后跑 1.5s」，动画尾巴、程序化开合、别的插件改布局全都会漏。 */
+				const IDLE_SKIP = 4;
 				let watchRaf = 0;
-				let watchUntil = 0;
-				let watchStart = 0;
-				let watchLast = '';
-				let watchStable = 0;
+				let watchKey = '';
+				let watchStill = 0;
+				let watchFrames = 0;
 				const watchFrame = () => {
-					watchRaf = 0;
+					try { watchRaf = window.requestAnimationFrame(watchFrame); } catch { watchRaf = 0; }
 					const node = stageRef.current;
-					if (node === null) return;
+					if (node === null || document.visibilityState === 'hidden') return;
+					watchFrames += 1;
+					if (watchStill >= IDLE_SKIP && (watchFrames % IDLE_SKIP) !== 0) return;
 					const box = node.getBoundingClientRect();
 					const key = Math.round(box.left) + ',' + Math.round(box.top) + ',' + Math.round(box.width) + ',' + Math.round(box.height);
-					if (key !== watchLast) { watchLast = key; watchStable = 0; lastTickRef.current = Date.now(); report(false); }
-					else watchStable += 1;
-					const at = Date.now();
-					const done = at >= watchUntil || (watchStable >= 8 && at - watchStart >= 400);
-					if (!done) watchRaf = window.requestAnimationFrame(watchFrame);
+					if (key === watchKey) {
+						if (watchStill < IDLE_SKIP) watchStill += 1;
+						return;
+					}
+					watchKey = key;
+					watchStill = 0;
+					lastTickRef.current = Date.now();
+					report(false);
 				};
-				const startWatch = () => {
-					watchStart = Date.now();
-					watchUntil = watchStart + WATCH_MS;
-					watchLast = '';
-					watchStable = 0;
-					if (watchRaf !== 0) return;
+				if (stage !== null) {
 					try { watchRaf = window.requestAnimationFrame(watchFrame); } catch { watchRaf = 0; }
-				};
-				const onPointerDown = () => startWatch();
-				const onKeyDown = (event) => {
-					if (event === null || event === undefined) return;
-					if (event.ctrlKey === true || event.altKey === true || event.metaKey === true || event.key === 'F11') startWatch();
-				};
+				}
 				/* 跟手：一帧最多报一次（rAF 合并）。拖右栏时面板每帧都在动，按固定 30ms 节流会让
 				   原生画面比面板慢半拍；这里同时把「最近一次运动时刻」记进 lastTickRef，
 				   遮挡扫描据此在运动期间让路（见 refreshOcclusion）。 */
 				const onChange = () => {
 					lastTickRef.current = Date.now();
-					startWatch();
+					watchStill = 0;
 					if (timerRef.current !== 0) return;
 					const run = () => { timerRef.current = 0; report(false); };
 					let id = -1;
@@ -651,9 +724,6 @@ window.__ModuleLoader__.load({
 				window.addEventListener('resize', onChange);
 				document.addEventListener('scroll', onScroll, true);
 				document.addEventListener('visibilitychange', onChange);
-				// transform 动画期间没有事件可听：交互之后主动开一段逐帧观察（见上面 WATCH_MS）
-				document.addEventListener('pointerdown', onPointerDown, true);
-				document.addEventListener('keydown', onKeyDown, true);
 				const stored = readStore();
 				const remembered = targetRef.current.length > 0
 					? targetRef.current
@@ -673,8 +743,6 @@ window.__ModuleLoader__.load({
 					window.removeEventListener('resize', onChange);
 					document.removeEventListener('scroll', onScroll, true);
 					document.removeEventListener('visibilitychange', onChange);
-					document.removeEventListener('pointerdown', onPointerDown, true);
-					document.removeEventListener('keydown', onKeyDown, true);
 					if (watchRaf !== 0) { try { window.cancelAnimationFrame(watchRaf); } catch { /* ignore */ } watchRaf = 0; }
 					targetRef.current = '';
 					lastRef.current = '';
@@ -696,6 +764,37 @@ window.__ModuleLoader__.load({
 			const marked = marks.some((item) => item.url === currentUrl);
 			const tabs = Array.isArray(page.tabs) ? page.tabs : [];
 			const zoomPercent = Math.round((Number(page.zoom) > 0 ? Number(page.zoom) : 1) * 100);
+			const activeTabId = (tabs.filter((one) => one.active === true)[0] || {}).id || '';
+
+			// 当前页面的标签始终滚在看得见的地方：不用自己拖标签条去找它（只动横向位置，不碰页面滚动）
+			react.useEffect(() => {
+				const box = tabsRef.current;
+				if (box === null || typeof box.querySelector !== 'function') return;
+				const on = box.querySelector('[data-active="1"]');
+				if (on === null || typeof on.getBoundingClientRect !== 'function') return;
+				const one = on.getBoundingClientRect();
+				const all = box.getBoundingClientRect();
+				if (one.left < all.left) box.scrollLeft -= (all.left - one.left) + 4;
+				else if (one.right > all.right) box.scrollLeft += (one.right - all.right) + 4;
+			}, [activeTabId, tabs.length]);
+
+			// 标签条溢出时，滚轮直接横滚（不用按 Shift 去找滑条）；没溢出就不拦，页面该怎么滚怎么滚。
+			// React 的 onWheel 在根节点上是 passive 的，preventDefault 不生效，所以这里挂原生监听。
+			react.useEffect(() => {
+				const box = tabsRef.current;
+				if (box === null || typeof box.addEventListener !== 'function') return undefined;
+				const onWheel = (event) => {
+					if (box.scrollWidth <= box.clientWidth) return;
+					const dy = Number(event.deltaY) || 0;
+					const dx = Number(event.deltaX) || 0;
+					const step = Math.abs(dy) >= Math.abs(dx) ? dy : dx;
+					if (step === 0) return;
+					event.preventDefault();
+					box.scrollLeft += step;
+				};
+				box.addEventListener('wheel', onWheel, { passive: false });
+				return () => { try { box.removeEventListener('wheel', onWheel); } catch { } };
+			}, []);
 
 			const toggleMark = async () => {
 				try {
@@ -726,26 +825,31 @@ window.__ModuleLoader__.load({
 				} catch { }
 			};
 
-			const mkButton = (name, title, onClick, disabled) => h('button', {
+			const mkButton = (name, title, onClick, disabled, onDoubleClick) => h('button', {
 				className: 'eb_btn',
 				type: 'button',
 				title: title,
 				disabled: disabled === true,
 				onMouseDown: (event) => event.preventDefault(),
-				onClick: (event) => { event.stopPropagation(); onClick(); }
+				onClick: (event) => { event.stopPropagation(); onClick(); },
+				onDoubleClick: (event) => { event.stopPropagation(); if (typeof onDoubleClick === 'function') onDoubleClick(); }
 			}, h(Icon, { name: name }));
 
-			const mkTab = (tab) => h('div', {
-				key: tab.id,
-				className: 'eb_tab',
-				'data-active': tab.active === true ? '1' : '0',
-				title: tab.title + '\n' + tab.url,
-				onClick: () => { if (tab.active !== true) post({ cmd: 'selectTab', id: tab.id }); }
-			}, h('span', { className: 'eb_tabText' }, tab.title), h('span', {
-				className: 'eb_tabClose',
-				onMouseDown: (event) => event.preventDefault(),
-				onClick: (event) => { event.stopPropagation(); post({ cmd: 'closeTab', id: tab.id }); }
-			}, h(Icon, { name: 'stop', size: 10 })));
+			// 加载中的标签把关闭叉换成转圈（点它还是关这个标签，和浏览器一致）
+			const mkTab = (tab) => {
+				const loading = tab.loading === true;
+				return h('div', {
+					key: tab.id,
+					className: 'eb_tab',
+					'data-active': tab.active === true ? '1' : '0',
+					title: tab.title + '\n' + tab.url,
+					onClick: () => { if (tab.active !== true) post({ cmd: 'selectTab', id: tab.id }); }
+				}, h('span', { className: 'eb_tabText' }, tab.title), h('span', {
+					className: loading ? 'eb_tabClose eb_tabSpin' : 'eb_tabClose',
+					onMouseDown: (event) => event.preventDefault(),
+					onClick: (event) => { event.stopPropagation(); post({ cmd: 'closeTab', id: tab.id }); }
+				}, h(Icon, { name: loading ? 'reload' : 'stop', size: 10 })));
+			};
 
 			const mkMark = (item) => h('div', {
 				key: item.url,
@@ -770,9 +874,17 @@ window.__ModuleLoader__.load({
 
 			const addressBox = h('input', {
 				className: 'eb_url',
+				ref: urlInputRef,
 				value: editing ? draft : currentUrl,
 				spellCheck: false,
-				onFocus: () => { setDraft(currentUrl); setEditing(true); },
+				// 聚焦即全选（真浏览器的手感），全选在受控值切换后再补一次
+				onFocus: (event) => {
+					const node = event.currentTarget;
+					setDraft(currentUrl);
+					setEditing(true);
+					try { node.select(); } catch { }
+					try { window.requestAnimationFrame(() => { try { node.select(); } catch { } }); } catch { }
+				},
 				onBlur: () => setEditing(false),
 				onChange: (event) => setDraft(event.target.value),
 				onKeyDown: (event) => {
@@ -813,16 +925,19 @@ window.__ModuleLoader__.load({
 					? mkButton('stop', '停止', () => nav('stop'))
 					: mkButton('reload', '重新加载', () => nav('reload')),
 				mkButton('home', '首页', () => nav('home')),
-				h('div', { className: 'eb_tabs', key: 'tabs' }, tabs.map(mkTab)),
+				h('div', { className: 'eb_tabs', key: 'tabs', ref: tabsRef }, tabs.map(mkTab)),
 				mkButton('plus', '新标签页', () => { openShelf(false); post({ cmd: 'newTab', url: START_URL }); }),
 				addressBox,
 				starButton,
-				listButton,
-				mkButton('zoomOut', '缩小 ' + zoomPercent + '%', () => nav('zoomOut')),
-				mkButton('zoomIn', '放大 ' + zoomPercent + '%', () => nav('zoomIn'))
+				listButton
 			];
+			// 窄栏先收起这两只：缩放还有 Ctrl+± / Ctrl+滚轮，双击任一只回 100%
+			if (compact < 1) {
+				barChildren.push(mkButton('zoomOut', '缩小 ' + zoomPercent + '%（双击回 100%）', () => nav('zoomOut'), false, () => nav('zoomReset')));
+				barChildren.push(mkButton('zoomIn', '放大 ' + zoomPercent + '%（双击回 100%）', () => nav('zoomIn'), false, () => nav('zoomReset')));
+			}
 
-			const navBar = h('div', { className: 'eb_bar' }, barChildren);
+			const navBar = h('div', { className: 'eb_bar', ref: barRef }, barChildren);
 			// 画面是外壳的原生 WebView2，导航期间它一直显示旧页；这条进度条在原生控件上方，是唯一能即时反映"正在加载"的地方
 			const barWrap = h('div', { className: 'eb_barWrap' },
 				navBar,
@@ -831,9 +946,87 @@ window.__ModuleLoader__.load({
 			const stageChildren = [];
 			if (!supported) stageChildren.push(h('span', { className: 'eb_fail', key: 'fail', title: '需要 DSH 桌面窗口' }, h(Icon, { name: 'warn', size: 18 })));
 			if (shelf && (!supported || !shellShelf)) stageChildren.push(shelfBox);
+			// 一个标签都不剩：外壳会立刻补一个首页，这里兜住它没补上的那几秒（画面区本来就是空的）
+			if (emptyVisible) {
+				stageChildren.push(h('div', {
+					className: 'eb_new',
+					key: 'newtab',
+					title: '新标签页',
+					onClick: (event) => { event.stopPropagation(); post({ cmd: 'newTab', url: START_URL }); }
+				}, h(Icon, { name: 'plus', size: 22 })));
+			}
 			const stage = h('div', { className: 'eb_stage', ref: stageRef, onMouseDown: () => { if (shelf) openShelf(false); } }, stageChildren);
 
-			return h('div', { className: 'eb_root' }, barWrap, stage);
+			// 下载条：外壳把每条下载的字节数与状态推过来，这里只画；取消/打开/移除都回外壳做
+			const mkDownload = (item) => {
+				const total = Number(item.total) || 0;
+				const got = Number(item.received) || 0;
+				const done = item.state === 'done';
+				const fail = item.state === 'fail';
+				const percent = done ? 100 : (total > 0 ? Math.min(100, Math.round((got * 100) / total)) : 0);
+				const label = fail ? (item.reason || '下载中断') : (done ? '已完成' : (total > 0 ? percent + '%' : fmtBytes(got)));
+				const act = (name, title, action) => h('span', {
+					className: 'eb_dlAct',
+					title: title,
+					onMouseDown: (event) => event.preventDefault(),
+					onClick: (event) => { event.stopPropagation(); post({ cmd: 'download', action: action, id: item.id }); }
+				}, h(Icon, { name: name, size: 12 }));
+				return h('div', { className: 'eb_dlRow', key: item.id },
+					h('span', { className: 'eb_dlName', title: item.name }, item.name),
+					h('span', { className: 'eb_dlBar' }, h('span', {
+						className: 'eb_dlFill',
+						'data-state': item.state,
+						style: { width: percent + '%' }
+					})),
+					h('span', { className: 'eb_dlPct' }, label),
+					done ? act('open', '打开', 'open') : null,
+					done ? act('folder', '在文件夹中显示', 'reveal') : null,
+					!done && !fail ? act('stop', '取消', 'cancel') : null,
+					act('stop', done || fail ? '移除' : '取消并移除', 'clear'));
+			};
+			const downloadBar = downloads.length > 0
+				? h('div', { className: 'eb_dl' }, downloads.map(mkDownload))
+				: null;
+
+			// 面板自己拿着焦点时（地址栏、按钮）也能按浏览器的键；画面里那份由外壳注入的脚本接
+			const panelKeys = (event) => {
+				if (event.ctrlKey !== true || event.altKey === true || event.metaKey === true) return;
+				const key = String(event.key === undefined || event.key === null ? '' : event.key).toLowerCase();
+				if (key === 't') {
+					event.preventDefault();
+					openShelf(false);
+					post({ cmd: 'newTab', url: START_URL });
+					return;
+				}
+				if (key === 'w') {
+					const on = tabs.filter((one) => one.active === true)[0];
+					if (on !== undefined) { event.preventDefault(); post({ cmd: 'closeTab', id: on.id }); }
+					return;
+				}
+				if (key === 'l') {
+					event.preventDefault();
+					const node = urlInputRef.current;
+					if (node !== null) { try { node.focus(); node.select(); } catch { } }
+					return;
+				}
+				if (key === 'tab') {
+					if (tabs.length < 2) return;
+					event.preventDefault();
+					let at = tabs.findIndex((one) => one.active === true);
+					if (at < 0) at = 0;
+					const step = event.shiftKey === true ? -1 : 1;
+					post({ cmd: 'selectTab', id: tabs[(at + step + tabs.length) % tabs.length].id });
+					return;
+				}
+				const slot = '12345678'.indexOf(key);
+				if (slot >= 0 && slot < tabs.length) { event.preventDefault(); post({ cmd: 'selectTab', id: tabs[slot].id }); }
+			};
+
+			return h('div', {
+				className: 'eb_root',
+				'data-compact': String(compact),
+				onKeyDown: panelKeys
+			}, barWrap, downloadBar, stage);
 		}
 
 		function tabDefinition() {
