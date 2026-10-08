@@ -5,7 +5,7 @@ $root = $PSScriptRoot
 $dshRoot = if ($env:DSH_ROOT) { $env:DSH_ROOT } else { Join-Path $HOME 'DeepSeek_harness' }
 $dsh = Join-Path $dshRoot 'node_modules\.bin\dsh.cmd'
 if (-not (Test-Path $dsh)) { throw "dsh CLI not found at $dsh; set DSH_ROOT to your install root" }
-foreach ($sub in @('dsh-viewer', 'dsh-embedded-browser')) {
+foreach ($sub in @('dsh-viewer', 'dsh-embedded-browser', 'dsh-rightpane-eyes')) {
   $path = Join-Path $root $sub
   "== $sub"
   & $dsh plugin --profile web add $path

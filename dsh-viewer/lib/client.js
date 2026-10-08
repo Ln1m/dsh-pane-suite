@@ -67,11 +67,11 @@ window.__ModuleLoader__.load({
 		}
 		const CSS = [
 			// ── 右栏查看器 tab 正文（路线 A：Office 转换 / 网页）────────────
-			".vk_viewerTab{width:100%;height:100%;display:flex;flex-direction:column;min-height:0}",
-			".vk_viewerBar{display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);border-bottom:0.5px solid var(--dsw-alias-border-l3);flex:none;min-width:0}",
+			"body{--vk-accent:var(--dsw-alias-accent,var(--dsw-alias-state-business-primary));--vk-accent-ring:color-mix(in srgb,var(--vk-accent) 22%,transparent);--vk-accent-soft:color-mix(in srgb,var(--vk-accent) 12%,transparent);--vk-ok:#73c991;--vk-danger:var(--dsw-alias-state-error-primary,#f14c4c);--vk-danger-soft:color-mix(in srgb,var(--vk-danger) 35%,transparent);--vk-fg:var(--dsw-alias-label-primary);--vk-fg2:var(--dsw-alias-label-secondary);--vk-fg3:var(--dsw-alias-label-tertiary);--vk-line:var(--dsw-alias-border-l1);--vk-line2:var(--dsw-alias-border-l2);--vk-bg-hover:var(--dsw-alias-interactive-bg-hover);--vk-r-xs:4px;--vk-r-sm:6px;--vk-r-md:8px;--vk-r-lg:12px;--vk-r-pill:999px;--vk-fs-xs:11px;--vk-fs-sm:12px;--vk-fs-md:13px;--vk-fs-lg:14px;--vk-dur:.12s;--vk-ease:cubic-bezier(.2,.7,.3,1);--vk-fade:background-color var(--vk-dur) var(--vk-ease),color var(--vk-dur) var(--vk-ease),border-color var(--vk-dur) var(--vk-ease),opacity var(--vk-dur) var(--vk-ease);--vk-ring:0 0 0 2px var(--vk-accent-ring);}.vk_viewerTab{width:100%;height:100%;display:flex;flex-direction:column;min-height:0}",
+			".vk_viewerBar{display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:var(--vk-fs-xs);color:var(--dsw-alias-label-tertiary);border-bottom:0.5px solid var(--dsw-alias-border-l3);flex:none;min-width:0}",
 			".vk_viewerFrame{flex:1;min-height:0;width:100%;border:0;background:var(--dsw-alias-bg-base)}",
-			".vk_pickRow{display:flex;gap:6px;justify-content:flex-end;min-width:0;container-type:inline-size}@container (width<=360px){.vk_pickBtn{padding:4px 8px;font-size:11px}}",
-			".vk_pickBtn{appearance:none;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);border-radius:6px;font-size:12px;padding:4px 12px;font-family:inherit;transition:background-color .12s,border-color .12s,color .12s}",
+			".vk_pickRow{display:flex;gap:6px;justify-content:flex-end;min-width:0;container-type:inline-size}@container (width<=360px){.vk_pickBtn{padding:4px 8px;font-size:var(--vk-fs-xs)}}",
+			".vk_pickBtn{appearance:none;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);border-radius:var(--vk-r-sm);font-size:var(--vk-fs-sm);padding:4px 12px;font-family:inherit;transition:background-color .12s,border-color .12s,color .12s}",
 			".vk_pickBtn:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3)}",
 			".vk_primaryBtn{background:var(--vk-accent);color:#fff;border-color:var(--vk-accent);font-weight:600}",
 			".vk_primaryBtn:hover{background:var(--vk-accent);color:#fff;filter:brightness(1.1);border-color:var(--vk-accent)}",
@@ -89,13 +89,13 @@ window.__ModuleLoader__.load({
 			// 「所在文件夹」在 20px 盒里换行 —— 窄栏下就是用户看到的「排一排按钮、变形」。
 			".vk_viewerBar{position:relative}",
 			".vk_viewMode{position:relative;flex:none;margin-left:auto}",
-			".vk_viewModeBtn{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px;border:none;border-radius:28px;background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;cursor:pointer;transition:background-color .12s,color .12s}",
+			".vk_viewModeBtn{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px;border:none;border-radius:28px;background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:var(--vk-fs-sm);cursor:pointer;transition:background-color .12s,color .12s}",
 			".vk_viewModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
 			".vk_viewModeBtnOn{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
 			// 菜单观感同样照官方量：bg rgb(53,54,56)、圆角 20px、内边距 4px、外发光
 			// rgba(255,255,255,.06) 0 0 0 .5px + rgba(0,0,0,.04) 0 3px 8px
 			".vk_viewMenu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;min-width:218px;padding:4px;border-radius:20px;background:var(--dsw-specific-menu);box-shadow:rgba(255,255,255,.06) 0 0 0 .5px,rgba(0,0,0,.04) 0 3px 8px 0,var(--dsw-shadow-lv3);display:flex;flex-direction:column;animation:vkFadeIn .1s ease-out}",
-			".vk_viewMenuItem{display:flex;align-items:center;gap:8px;width:100%;height:34px;padding:0 10px;border:none;border-radius:14px;background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12.5px;text-align:left;cursor:pointer;white-space:nowrap}",
+			".vk_viewMenuItem{display:flex;align-items:center;gap:8px;width:100%;height:34px;padding:0 10px;border:none;border-radius:var(--vk-r-lg);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:var(--vk-fs-sm);text-align:left;cursor:pointer;white-space:nowrap}",
 			".vk_viewMenuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}",
 			".vk_viewMenuItemOn{color:var(--vk-accent)}",
 			".vk_viewMenuLabel{overflow:hidden;text-overflow:ellipsis}",
@@ -103,18 +103,18 @@ window.__ModuleLoader__.load({
 			".vk_viewMenuSep{height:1px;margin:4px 8px;background:var(--dsw-alias-border-l2);flex:none}",
 			".vk_imgToolbar{display:flex;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);flex-wrap:wrap;flex:none}",
 			".vk_imgToolbarSpacer{flex:1;min-width:8px}",
-			".vk_imgZoomBtn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-family:inherit}",
+			".vk_imgZoomBtn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);font-size:var(--vk-fs-sm);padding:4px 7px;border-radius:var(--vk-r-sm);cursor:pointer;font-family:inherit}",
 			".vk_imgZoomBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
 			".vk_imgZoomBtnOn{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}",
-			".vk_imgZoomPct{font-size:11px;color:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary));min-width:52px;text-align:center;font-variant-numeric:tabular-nums}",
+			".vk_imgZoomPct{font-size:var(--vk-fs-xs);color:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary));min-width:52px;text-align:center;font-variant-numeric:tabular-nums}",
 			".vk_imgWrap{flex:1;min-height:0;display:flex;overflow:auto;background:repeating-conic-gradient(var(--dsw-alias-interactive-bg-hover) 0% 25%,transparent 0% 50%) 0 0/22px 22px;position:relative;cursor:grab}",
 			".vk_imgWrap.vk_imgPan{cursor:grabbing}",
-			".vk_imgWrap img{display:block;margin:auto;user-select:none;-webkit-user-drag:none;box-shadow:0 2px 16px rgba(0,0,0,.35);background:#fff;border-radius:4px}",
-			".vk_empty{padding:32px 20px;font-size:12.5px;line-height:2;color:var(--dsw-alias-label-tertiary);text-align:center;white-space:pre-wrap}",
+			".vk_imgWrap img{display:block;margin:auto;user-select:none;-webkit-user-drag:none;box-shadow:0 2px 16px rgba(0,0,0,.35);background:#fff;border-radius:var(--vk-r-xs)}",
+			".vk_empty{padding:32px 20px;font-size:var(--vk-fs-sm);line-height:2;color:var(--dsw-alias-label-tertiary);text-align:center;white-space:pre-wrap}",
 			// ── 键盘聚焦可见态（统一 accent 光圈） ──────────────────────
 			".vk_tabBtn:focus-visible,.vk_railBtn:focus-visible,.vk_treeBtn:focus-visible,.vk_rowBtn:focus-visible,.vk_pickBtn:focus-visible,.vk_editBtn:focus-visible,.vk_tabClose:focus-visible{outline:2px solid var(--vk-accent-ring);outline-offset:-2px}",
 			".vk_imgToolbar{display:flex;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);flex-wrap:wrap}",
-			".vk_imgZoomBtn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer}",
+			".vk_imgZoomBtn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);font-size:var(--vk-fs-sm);padding:4px 7px;border-radius:var(--vk-r-sm);cursor:pointer}",
 			".vk_imgZoomBtn:disabled{opacity:.4;cursor:default}",
 		].join("");
 
@@ -1059,8 +1059,15 @@ window.__ModuleLoader__.load({
 			try {
 				const svc = ctxRef.current.get("sessions");
 				const snap = svc.list.getSnapshot();
-				const row = snap !== undefined && snap !== null && typeof snap.current === "string" ? snap.byId[snap.current] : null;
-				return row !== undefined && row !== null && row.blank !== true && typeof row.cwd === "string" ? row.cwd : "";
+				const byId = snap !== undefined && snap !== null && snap.byId !== undefined && snap.byId !== null ? snap.byId : null;
+				let row = null;
+				if (byId !== null) {
+					for (const key of Object.keys(byId)) {
+						const candidate = byId[key];
+						if (candidate !== null && candidate !== undefined && ((candidate.retainedBy && candidate.retainedBy.mainView) || 0) > 0) { row = candidate; break; }
+					}
+				}
+				return row !== null && row.blank !== true && typeof row.cwd === "string" ? row.cwd : "";
 			} catch { return ""; }
 		}
 		function apply(ctx) {

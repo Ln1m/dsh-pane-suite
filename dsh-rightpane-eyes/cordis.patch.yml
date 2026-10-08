@@ -1,0 +1,6 @@
+# dsh-rightpane-eyes：把双面插件行插进 web profile 的名册。
+# 宿主半边跑在 host 进程里：/rightpane-eyes/api/* 路由 + systemPrompt.context 动态上下文；
+# package.json 里的 dsh.client 声明让浏览器半边在 Web GUI 里加载（技能档那一排的眼睛胶囊）。
+- insert:
+    - id: dsh-rightpane-eyes
+      name: 'dsh-rightpane-eyes'

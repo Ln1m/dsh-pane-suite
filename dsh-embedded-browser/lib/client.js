@@ -395,6 +395,17 @@ window.__ModuleLoader__.load({
 
 			const report = react.useCallback((force) => {
 				if (!supported) return;
+				/* 同一块原生控件只能有一个主人：别的插件把画面摆到中栏占住时，
+				   本面板立刻让位并停止上报，否则两边每 300ms 各报一次矩形 = 画面来回跳。 */
+				const owner = globalThis.__DSH_EMBED_OWNER__;
+				if (owner !== undefined && owner !== 'embedded-browser') {
+					if (lastRef.current !== '{"cmd":"hide"}') {
+						lastRef.current = '{"cmd":"hide"}';
+						sentRef.current = '';
+						post({ cmd: 'hide' });
+					}
+					return;
+				}
 				const box = geometry();
 				if (box !== null) refreshOcclusion();
 				// 浮层开着：面板每次报矩形都顺手把它的位置带上，拖右栏时浮层跟着走
@@ -559,7 +570,13 @@ window.__ModuleLoader__.load({
 					// 标签关到零个由外壳立刻补一个首页（关到零就白屏，补的速度还得看它）；
 					// 这里只在真收到「零个」时把空态放出来，兜住外壳那边没补上的情况。
 					if (Array.isArray(data.tabs)) setTabsEmpty(data.tabs.length === 0);
-					if (typeof data.url === 'string' && data.url.length > 0) setUrl(data.url);
+					if (typeof data.url === 'string' && data.url.length > 0) {
+						setUrl(data.url);
+						// 记住「画面现在停在哪一页」，而不是「上一次显式打开过哪一页」：外壳那块 WebView2
+						// 是常驻的（在页里点链接、切标签都不经过 open()），只记显式打开的话，面板一重挂
+						// （右栏切走再切回）就会拿着旧地址重报一次，把画面拽回去（实测症状：切回来又是首页）。
+						writeStore(data.url);
+					}
 					if (data.loading === false && typeof data.url === 'string' && data.url.length > 0 && data.url !== loggedRef.current) {
 						loggedRef.current = data.url;
 						void api('/history', { url: data.url, title: data.title }).catch(() => {});
